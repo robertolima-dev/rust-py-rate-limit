@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "rust-py-rate-limit"
-version = "0.1.1"
+version = "0.1.4"
 description = "Fast local rate limiting for Python, powered by Rust."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -35,9 +35,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/robertolima/rust-py-rate-limit"
-Repository = "https://github.com/robertolima/rust-py-rate-limit"
-Issues = "https://github.com/robertolima/rust-py-rate-limit/issues"
+Homepage = "https://github.com/robertolima-dev/rust-py-rate-limit"
+Repository = "https://github.com/robertolima-dev/rust-py-rate-limit"
+Issues = "https://github.com/robertolima-dev/rust-py-rate-limit/issues"
 
 [project.optional-dependencies]
 dev = ["pytest", "fastapi", "uvicorn", "django", "httpx", "starlette"]

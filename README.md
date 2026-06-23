@@ -2,6 +2,8 @@
 
 > **Fast local rate limiting for Python, powered by Rust.**
 
+🌐 **Website:** [rust-py-rate-limit.vercel.app](https://rust-py-rate-limit.vercel.app/)
+
 A fast, thread-safe, in-process rate limiter for Python with a core written in
 **Rust** (via [PyO3](https://pyo3.rs) + [maturin](https://www.maturin.rs)). Use
 it to protect endpoints, functions, internal APIs, workers and backend scripts

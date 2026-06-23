@@ -1,6 +1,6 @@
 [package]
 name = "rust_py_rate_limit"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Fast local rate limiting for Python, powered by Rust."
 license = "MIT"

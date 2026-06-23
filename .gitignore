@@ -1,0 +1,12 @@
+/target
+/dist
+/wheels
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+*.egg-info/
+build/

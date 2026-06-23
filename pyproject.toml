@@ -1,0 +1,51 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "rust-py-rate-limit"
+version = "0.1.0"
+description = "Fast local rate limiting for Python, powered by Rust."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Roberto Lima", email = "robertolima.izphera@gmail.com" }]
+keywords = [
+    "rate-limit",
+    "rate-limiting",
+    "throttle",
+    "rust",
+    "pyo3",
+    "fastapi",
+    "django",
+    "flask",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/robertolima/rust-py-rate-limit"
+Repository = "https://github.com/robertolima/rust-py-rate-limit"
+Issues = "https://github.com/robertolima/rust-py-rate-limit/issues"
+
+[project.optional-dependencies]
+dev = ["pytest", "fastapi", "uvicorn", "django", "httpx", "starlette"]
+
+[tool.maturin]
+python-source = "python"
+module-name = "rust_py_rate_limit._core"
+features = ["pyo3/extension-module"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

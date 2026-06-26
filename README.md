@@ -29,6 +29,7 @@ else:
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [How Fixed Window works](#how-fixed-window-works)
+- [How Sliding Window works](#how-sliding-window-works)
 - [API reference](#api-reference)
 - [FastAPI](#fastapi)
 - [Django](#django)
@@ -89,11 +90,19 @@ assert limiter.allow("ip:127.0.0.1") is True
 assert limiter.allow("ip:127.0.0.1") is False   # limit reached
 ```
 
+Opt into the **Sliding Window** algorithm to smooth bursts at the window
+boundary (the default is `"fixed"`):
+
+```python
+limiter = RateLimiter(limit=100, window_seconds=60, algorithm="sliding")
+limiter.algorithm  # "sliding"
+```
+
 ## How Fixed Window works
 
-The MVP implements the **Fixed Window** algorithm. Each key gets a counter and a
-window start time. Within a window of `window_seconds`, up to `limit` requests
-are admitted; once the window elapses, the counter resets.
+The default algorithm is **Fixed Window**. Each key gets a counter and a window
+start time. Within a window of `window_seconds`, up to `limit` requests are
+admitted; once the window elapses, the counter resets.
 
 ```text
 limit = 3, window = 60s, key = "user:1"
@@ -108,17 +117,41 @@ request 5 -> allowed   (new window)
 
 Fixed Window is simple and cheap. Its only caveat is that it can admit up to
 `2 * limit` requests around a window boundary (a burst at the end of one window
-plus a burst at the start of the next). If you need stricter smoothing, the
-roadmap includes Sliding Window and Token Bucket.
+plus a burst at the start of the next). If you need stricter smoothing, use
+`algorithm="sliding"` (below).
+
+## How Sliding Window works
+
+Set `algorithm="sliding"` for the **sliding window counter**, which removes the
+boundary doubling. It keeps the count for the current aligned window plus the
+previous one, and weights the previous window by how much of it still overlaps
+the trailing `window_seconds` ending at *now*:
+
+```text
+estimated = previous_count * weight + current_count
+weight    = (window_seconds - elapsed_in_current_window) / window_seconds
+```
+
+A request is admitted while `estimated < limit`. This is O(1) in time and memory
+per key (unlike a sliding *log*, which stores every timestamp) and smooths the
+burst at the boundary, at the cost of being an approximation rather than an exact
+count.
+
+```python
+limiter = RateLimiter(limit=10, window_seconds=60, algorithm="sliding")
+# A full burst at the end of one window leaves far fewer slots right after the
+# boundary, instead of a fresh `limit` as Fixed Window would.
+```
 
 ## API reference
 
 ```python
-RateLimiter(limit: int, window_seconds: int)
+RateLimiter(limit: int, window_seconds: int, algorithm: str = "fixed")
 ```
 
-Both arguments must be **positive integers**. Passing `0` (or a negative value)
-raises `ValueError`.
+`limit` and `window_seconds` must be **positive integers** (passing `0` or a
+negative value raises `ValueError`). `algorithm` selects the strategy —
+`"fixed"` (default) or `"sliding"`; any other value raises `ValueError`.
 
 | Method | Returns | Description |
 | --- | --- | --- |
@@ -130,8 +163,9 @@ raises `ValueError`.
 | `stats()` | `dict` | Activity counters (see [Statistics](#statistics)). |
 | `cleanup_expired()` | `int` | Remove keys whose window has expired. Returns the count removed. |
 
-Read-only properties: `limiter.max_requests` and `limiter.window_seconds`.
-(The configured limit is `max_requests`, since `.limit(...)` is the decorator.)
+Read-only properties: `limiter.max_requests`, `limiter.window_seconds` and
+`limiter.algorithm` (`"fixed"` or `"sliding"`). (The configured limit is
+`max_requests`, since `.limit(...)` is the decorator.)
 
 ### `check()` return value
 
@@ -289,19 +323,21 @@ Be honest with yourself about what an in-process limiter can and cannot do:
 - Under Gunicorn/Uvicorn with **multiple workers**, each worker keeps its own
   counters, so the effective global limit is roughly `limit × workers`.
 - It is **not** a replacement for Redis when you need distributed rate limiting.
-- Fixed Window can allow short bursts at the boundary between two windows.
+- Fixed Window can allow short bursts at the boundary between two windows; use
+  `algorithm="sliding"` to smooth them.
 - For distributed production setups, a Redis/Postgres backend is planned (see
   the roadmap).
 
 ## Roadmap
 
-| Version | Highlights |
-| --- | --- |
-| **v0.1.0** | Fixed Window · `allow`/`check`/`remaining`/`reset`/`clear`/`stats`/`cleanup_expired` · pytest · README |
-| v0.2.0 | Decorator · FastAPI/Django middleware · HTTP headers |
-| v0.3.0 | Sliding Window · Token Bucket · background cleanup |
-| v0.4.0 | Redis backend · distributed rate limiting |
-| v0.5.0 | Prometheus metrics · ImmutableLog integration |
+| Version | Highlights | Status |
+| --- | --- | --- |
+| **v0.1.0** | Fixed Window · `allow`/`check`/`remaining`/`reset`/`clear`/`stats`/`cleanup_expired` · pytest · README | ✅ |
+| **v0.1.5** | Decorator · FastAPI/Django/Flask middleware · HTTP headers | ✅ |
+| **v0.2.0** | Sliding Window (`algorithm="sliding"`) | ✅ |
+| v0.3.0 | Token Bucket · background cleanup | 🔜 |
+| v0.4.0 | Redis backend · distributed rate limiting | 🔜 |
+| v0.5.0 | Prometheus metrics · ImmutableLog integration | 🔜 |
 
 ## Development
 

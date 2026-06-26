@@ -8,12 +8,12 @@ mod entry;
 mod errors;
 mod fixed_window;
 mod rate_limiter;
+mod sliding_window;
 mod stats;
 mod time_utils;
 
-// Reserved for future algorithms (see the roadmap). They are intentionally not
-// wired into the module yet so the MVP stays focused on Fixed Window.
-// mod sliding_window;
+// Reserved for a future algorithm (see the roadmap). Intentionally not wired in
+// yet so the surface stays focused on Fixed Window + Sliding Window.
 // mod token_bucket;
 
 use pyo3::prelude::*;

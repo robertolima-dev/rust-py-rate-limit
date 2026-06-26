@@ -20,6 +20,10 @@ pub enum RateLimitError {
     #[error("invalid `window_seconds`: must be greater than 0")]
     InvalidWindow,
 
+    /// `algorithm` must be one of the supported strategies.
+    #[error("invalid `algorithm`: {0:?} (expected \"fixed\" or \"sliding\")")]
+    InvalidAlgorithm(String),
+
     /// The system clock could not be read.
     #[error("system time error: {0}")]
     SystemTime(String),

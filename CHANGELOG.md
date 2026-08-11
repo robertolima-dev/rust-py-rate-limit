@@ -5,6 +5,25 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.2.2] — não publicada
+
+Correção do passo de verificação pós-upload introduzido na 0.2.1.
+
+### Corrigido
+
+- **Falso negativo na verificação pós-publicação.** O passo comparava
+  `glob("dist/*")` com o que estava no PyPI. O `pypa/gh-action-pypi-publish`
+  grava um `.publish.attestation` por distribuição em `dist/` depois de
+  publicar — atestados PEP 740, que sobem junto do arquivo e não como arquivo
+  próprio. O glob os contava como ausentes, então a verificação **reprovou a
+  0.2.1, que na verdade subiu inteira**, com os 8 arquivos. O passo agora só
+  considera `*.whl` e `*.tar.gz`, os únicos tipos de arquivo que o PyPI
+  hospeda.
+
+**Não vai ao PyPI sozinha:** a 0.2.1 está lá completa e esta versão só
+mexe no pipeline. O número fica reservado e sai com a próxima mudança que
+valha uma tag.
+
 ## [0.2.1] - 2026-08-11
 
 Release de empacotamento: nada muda no comportamento da biblioteca, mas muda

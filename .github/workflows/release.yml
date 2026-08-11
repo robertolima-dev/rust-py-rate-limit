@@ -232,7 +232,16 @@ jobs:
           python - <<'PY'
           import os, sys, glob, time, requests
           version = os.environ["GITHUB_REF_NAME"].lstrip("v")
-          local = {os.path.basename(p) for p in glob.glob("dist/*")}
+          # Só .whl e .tar.gz: são os únicos tipos de arquivo que o PyPI hospeda.
+          # `pypa/gh-action-pypi-publish` deixa um .publish.attestation por
+          # distribuição em dist/ depois de publicar (atestados PEP 740, que
+          # sobem junto do arquivo, não como arquivo próprio). Um glob amplo os
+          # conta como "faltando no PyPI" e reprova uma release que deu certo.
+          local = {
+              os.path.basename(p)
+              for pattern in ("dist/*.whl", "dist/*.tar.gz")
+              for p in glob.glob(pattern)
+          }
           url = f"https://pypi.org/pypi/rust-py-rate-limit/{version}/json"
           for attempt in range(6):          # PyPI's JSON API is cached
               response = requests.get(url, timeout=30)

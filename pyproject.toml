@@ -1,5 +1,7 @@
 [build-system]
-requires = ["maturin>=1.0,<2.0"]
+# Piso 1.14 de propósito: versões anteriores não emitem o `License-Expression`
+# do PEP 639, e a 0.2.1 foi ao PyPI sem metadado de licença nenhum (ver P1-4).
+requires = ["maturin>=1.14,<2.0"]
 build-backend = "maturin"
 
 [project]
@@ -8,7 +10,12 @@ version = "0.2.2"
 description = "Fast local rate limiting for Python, powered by Rust."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE" }
+# Forma do PEP 639: expressão SPDX + arquivos de licença declarados. A forma
+# antiga (`{ file = "LICENSE" }`) despejava o texto inteiro no campo `License`,
+# e o classifier "License :: OSI Approved" saiu — é mutuamente exclusivo com
+# License-Expression no Metadata 2.4.
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Roberto Lima", email = "robertolima.izphera@gmail.com" }]
 keywords = [
     "rate-limit",
@@ -23,7 +30,6 @@ keywords = [
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Rust",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",

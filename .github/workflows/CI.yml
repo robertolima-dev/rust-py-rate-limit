@@ -10,6 +10,30 @@ permissions:
   contents: read
 
 jobs:
+  # O lint faz parte do portão de release, não de um workflow paralelo.
+  # Nos repositórios de workflow único, um `lint` vermelho ao lado de uma
+  # publicação bem-sucedida seria ruído difícil de ler — a leitura passa a ser
+  # inequívoca: vermelho significa que não publicou.
+  #
+  # A toolchain é fixa, não "stable": com `-D warnings`, um clippy mais novo
+  # no runner reprova código que ninguém tocou, e a CI ficaria vermelha por
+  # conta do calendário. Subir este número vira uma mudança deliberada.
+  lint:
+    name: fmt + clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo fmt
+        run: cargo fmt --all -- --check
+      # clippy só checa tipos, não linka, então --all-features é seguro aqui
+      # (diferente do `cargo test`, que precisa de --no-default-features).
+      - name: cargo clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
   rust-tests:
     name: cargo test
     runs-on: ubuntu-latest
@@ -20,10 +44,8 @@ jobs:
         with:
           python-version: "3.12"
       - uses: Swatinem/rust-cache@v2
-      - name: cargo fmt
-        run: cargo fmt --all -- --check
-      - name: cargo clippy
-        run: cargo clippy --all-targets -- -D warnings
+      # fmt e clippy saíram daqui para o job `lint` (P1-6): toolchain fixa e
+      # --all-features, na mesma forma dos outros quatro projetos.
       - name: cargo test
         run: cargo test
 

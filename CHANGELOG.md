@@ -7,9 +7,36 @@ e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
 ## [0.2.2] — não publicada
 
-Correção do passo de verificação pós-upload introduzido na 0.2.1.
+Correção do passo de verificação pós-upload introduzido na 0.2.1, mais o
+trabalho de licença e lint de 12/08/2026 (**P1-4** e **P1-6**).
+
+### Alterado
+
+- **fmt e clippy saíram do job de teste para um job `lint` próprio**, no
+  `CI.yml` e no `release.yml`. Este projeto já era o único dos cinco a rodar os
+  dois, mas embutidos no `rust-tests`/`test` e com `dtolnay/rust-toolchain@stable`.
+  Agora a toolchain é fixa (`1.88.0`) e o clippy roda com `--all-features`, na
+  mesma forma dos outros quatro. No `release.yml`, os jobs de build e o de
+  publicação ganharam `lint` no `needs`. O `cargo fmt --check` já passava aqui
+  — era o único dos cinco.
+- **`clippy.toml` e `Makefile`** compartilhados com os outros quatro.
 
 ### Corrigido
+
+- **Metadado de licença ausente no PyPI.** A 0.2.1 está publicada com
+  `license_expression: null` e `license: ""`. Duas causas somadas: a forma
+  `license = { file = "LICENSE" }` (que despeja o texto inteiro no campo
+  legado) e a **maturin anterior à 1.14**, que não emite `License-Expression`.
+  O piso do `[build-system]` subiu de `>=1.0` para `>=1.14`, a declaração
+  virou `license = "MIT"` + `license-files = ["LICENSE"]`, e o classifier
+  `License :: OSI Approved` saiu.
+
+  ⚠️ Vale notar: este era o projeto que usava a forma **mais exigente**
+  (`{ file = ... }` exige o arquivo presente) e mesmo assim publicava sem
+  metadado. Declaração correta não garante metadado correto — quem decide é
+  a versão do backend de build.
+
+### Corrigido — pipeline (0.2.1)
 
 - **Falso negativo na verificação pós-publicação.** O passo comparava
   `glob("dist/*")` com o que estava no PyPI. O `pypa/gh-action-pypi-publish`

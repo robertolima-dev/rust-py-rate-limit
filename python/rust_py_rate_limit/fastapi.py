@@ -12,6 +12,8 @@ Usage::
         limit=100,
         window_seconds=60,
         key_func=lambda request: request.client.host,
+        max_keys=100_000,          # bound memory under a key flood
+        cleanup_interval=60,       # drop expired keys in the background
     )
 """
 
@@ -43,10 +45,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         key_func: Optional[Callable[[Request], str]] = None,
         limiter: Optional[RateLimiter] = None,
         detail: str = "Too many requests",
+        max_keys: Optional[int] = None,
+        cleanup_interval: Optional[float] = None,
     ) -> None:
         super().__init__(app)
         self.limiter = limiter or RateLimiter(
-            limit=limit, window_seconds=window_seconds
+            limit=limit,
+            window_seconds=window_seconds,
+            max_keys=max_keys,
+            cleanup_interval=cleanup_interval,
         )
         self.key_func = key_func or _default_key
         self.detail = detail

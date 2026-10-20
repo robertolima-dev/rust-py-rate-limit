@@ -35,6 +35,7 @@ else:
 - [Django](#django)
 - [Flask](#flask)
 - [Decorator](#decorator)
+- [Bounded memory](#bounded-memory)
 - [Statistics](#statistics)
 - [Limitations](#limitations)
 - [Roadmap](#roadmap)
@@ -146,12 +147,20 @@ limiter = RateLimiter(limit=10, window_seconds=60, algorithm="sliding")
 ## API reference
 
 ```python
-RateLimiter(limit: int, window_seconds: int, algorithm: str = "fixed")
+RateLimiter(
+    limit: int,
+    window_seconds: int,
+    algorithm: str = "fixed",
+    max_keys: int | None = None,
+    cleanup_interval: float | None = None,
+)
 ```
 
 `limit` and `window_seconds` must be **positive integers** (passing `0` or a
 negative value raises `ValueError`). `algorithm` selects the strategy —
 `"fixed"` (default) or `"sliding"`; any other value raises `ValueError`.
+`max_keys` and `cleanup_interval` bound memory — see
+[Bounded memory](#bounded-memory).
 
 | Method | Returns | Description |
 | --- | --- | --- |
@@ -163,8 +172,9 @@ negative value raises `ValueError`). `algorithm` selects the strategy —
 | `stats()` | `dict` | Activity counters (see [Statistics](#statistics)). |
 | `cleanup_expired()` | `int` | Remove keys whose window has expired. Returns the count removed. |
 
-Read-only properties: `limiter.max_requests`, `limiter.window_seconds` and
-`limiter.algorithm` (`"fixed"` or `"sliding"`). (The configured limit is
+Read-only properties: `limiter.max_requests`, `limiter.window_seconds`,
+`limiter.algorithm` (`"fixed"` or `"sliding"`), `limiter.max_keys` and
+`limiter.cleanup_interval`. (The configured limit is
 `max_requests`, since `.limit(...)` is the decorator.)
 
 ### `check()` return value
@@ -303,6 +313,41 @@ def fetch(user_id):
     ...
 ```
 
+## Bounded memory
+
+The key is usually a client IP or token — something the **caller** controls. An
+unbounded limiter lets a client that mints a fresh key per request grow the map
+until the process runs out of memory: the library meant to protect you becomes
+the attack vector. Two options close that:
+
+```python
+limiter = RateLimiter(
+    limit=100,
+    window_seconds=60,
+    max_keys=100_000,      # hard cap on tracked keys
+    cleanup_interval=60,   # background thread drops expired keys every 60s
+)
+```
+
+- **`max_keys`** — when the map is full, expired keys are reclaimed first (at
+  most once per second, so a flood can't make every request pay a full sweep).
+  If it is still full, the **new** key is rejected (`allowed=False`,
+  `retry_after_seconds=window_seconds`) and counted in `stats()["rejected_full"]`.
+  Keys already tracked are **never evicted** to make room — evicting would
+  reset a legitimate client's counter on the attacker's behalf.
+- **`cleanup_interval`** — a native thread (no GIL) that calls
+  `cleanup_expired()` on that period. It holds only a weak reference, so it
+  stops on its own when the limiter is garbage-collected.
+
+Both default to `None`, which keeps the pre-0.3 behaviour (unbounded, manual
+cleanup). For anything keyed by client input, set both. The FastAPI middleware
+and `FlaskRateLimiter` accept the same two keyword arguments; on Django, use
+`"MAX_KEYS"` and `"CLEANUP_INTERVAL"` in `RUST_PY_RATE_LIMIT`.
+
+The cap is checked without a global lock, so under heavy concurrency the map
+can overshoot `max_keys` by at most the number of threads inserting new keys at
+that same instant.
+
 ## Statistics
 
 ```python
@@ -312,6 +357,7 @@ limiter.stats()
 #     "blocked": 35,
 #     "total_checks": 1235,
 #     "active_keys": 20,
+#     "rejected_full": 0,   # new keys refused by max_keys (also in "blocked")
 # }
 ```
 
@@ -335,7 +381,8 @@ Be honest with yourself about what an in-process limiter can and cannot do:
 | **v0.1.0** | Fixed Window · `allow`/`check`/`remaining`/`reset`/`clear`/`stats`/`cleanup_expired` · pytest · README | ✅ |
 | **v0.1.5** | Decorator · FastAPI/Django/Flask middleware · HTTP headers | ✅ |
 | **v0.2.0** | Sliding Window (`algorithm="sliding"`) | ✅ |
-| v0.3.0 | Token Bucket · background cleanup | 🔜 |
+| **v0.3.0** | `max_keys` (bounded memory) · background cleanup (`cleanup_interval`) | ✅ |
+| v0.3.x | Token Bucket | 🔜 |
 | v0.4.0 | Redis backend · distributed rate limiting | 🔜 |
 | v0.5.0 | Prometheus metrics · ImmutableLog integration | 🔜 |
 

@@ -6,7 +6,7 @@ build-backend = "maturin"
 
 [project]
 name = "rust-py-rate-limit"
-version = "0.2.2"
+version = "0.3.0"
 description = "Fast local rate limiting for Python, powered by Rust."
 readme = "README.md"
 requires-python = ">=3.10"

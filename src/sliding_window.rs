@@ -179,6 +179,11 @@ impl SlidingWindow {
         removed
     }
 
+    /// Whether `key` is currently tracked.
+    pub fn contains(&self, key: &str) -> bool {
+        self.entries.contains_key(key)
+    }
+
     /// Number of keys currently tracked.
     pub fn len(&self) -> usize {
         self.entries.len()

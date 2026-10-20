@@ -14,6 +14,9 @@ pub struct RateLimitStats {
     pub allowed: AtomicU64,
     pub blocked: AtomicU64,
     pub total_checks: AtomicU64,
+    /// New keys turned away because the limiter was at `max_keys`. Also
+    /// counted in `blocked`.
+    pub rejected_full: AtomicU64,
 }
 
 /// A point-in-time, plain-data view of the stats (used for serialization and
@@ -24,6 +27,7 @@ pub struct StatsSnapshot {
     pub blocked: u64,
     pub total_checks: u64,
     pub active_keys: u64,
+    pub rejected_full: u64,
 }
 
 impl RateLimitStats {
@@ -39,6 +43,12 @@ impl RateLimitStats {
         self.total_checks.fetch_add(1, Ordering::Relaxed);
     }
 
+    /// Records one new key rejected because the limiter was full.
+    pub fn record_rejected_full(&self) {
+        self.rejected_full.fetch_add(1, Ordering::Relaxed);
+        self.record_blocked();
+    }
+
     /// Builds a snapshot. `active_keys` is supplied by the caller because it is
     /// derived from the live map length rather than an atomic counter (which
     /// would drift on cleanup).
@@ -48,6 +58,7 @@ impl RateLimitStats {
             blocked: self.blocked.load(Ordering::Relaxed),
             total_checks: self.total_checks.load(Ordering::Relaxed),
             active_keys,
+            rejected_full: self.rejected_full.load(Ordering::Relaxed),
         }
     }
 }

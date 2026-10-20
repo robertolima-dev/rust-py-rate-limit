@@ -5,6 +5,36 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.3.0] — não publicada
+
+Memória com teto (**P2-3**). Até aqui o mapa de chaves crescia sem limite: a
+chave típica é IP ou token, controlada por quem chama, e um cliente gerando uma
+chave nova por requisição derrubava o processo por falta de memória.
+
+### Adicionado
+
+- **`max_keys`** no construtor do `RateLimiter`. Com o mapa cheio, as chaves
+  expiradas são recolhidas primeiro — no máximo uma varredura por segundo, para
+  uma enxurrada não fazer toda requisição pagar O(n). Se continuar cheio, a
+  chave **nova** é recusada (`allowed=False`, `retry_after_seconds` igual à
+  janela). Chaves já rastreadas nunca são despejadas para abrir espaço:
+  despejar zeraria o contador de um cliente legítimo a favor do atacante.
+- **`cleanup_interval`** (segundos): thread nativa, sem GIL, que chama
+  `cleanup_expired()` periodicamente. Mesmo desenho do
+  `rust_py_cache/src/sweeper.rs` — referência `Weak`, sono fatiado, `join` no
+  `Drop`.
+- **`stats()["rejected_full"]`**: chaves novas recusadas pelo teto (também
+  somadas em `blocked`).
+- Propriedades `max_keys` e `cleanup_interval`; o `repr` passa a mostrá-las.
+- Os dois parâmetros nas integrações: `RateLimitMiddleware` (FastAPI),
+  `FlaskRateLimiter` e `MAX_KEYS` / `CLEANUP_INTERVAL` no
+  `RUST_PY_RATE_LIMIT` do Django.
+
+### Compatibilidade
+
+- Os dois parâmetros têm `None` como padrão, que preserva o comportamento da
+  0.2 (sem teto, limpeza manual). Nenhuma chamada existente muda.
+
 ## [0.2.2] — não publicada
 
 Correção do passo de verificação pós-upload introduzido na 0.2.1, mais o

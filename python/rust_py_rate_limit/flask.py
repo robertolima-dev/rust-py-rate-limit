@@ -38,8 +38,15 @@ class FlaskRateLimiter:
         window_seconds: int = 60,
         key_func: Optional[Callable[[], str]] = None,
         detail: str = "Too many requests",
+        max_keys: Optional[int] = None,
+        cleanup_interval: Optional[float] = None,
     ) -> None:
-        self.limiter = RateLimiter(limit=limit, window_seconds=window_seconds)
+        self.limiter = RateLimiter(
+            limit=limit,
+            window_seconds=window_seconds,
+            max_keys=max_keys,
+            cleanup_interval=cleanup_interval,
+        )
         self.key_func = key_func or (lambda: request.remote_addr or "anonymous")
         self.detail = detail
         if app is not None:

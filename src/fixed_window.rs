@@ -112,6 +112,11 @@ impl FixedWindow {
         removed
     }
 
+    /// Whether `key` is currently tracked.
+    pub fn contains(&self, key: &str) -> bool {
+        self.entries.contains_key(key)
+    }
+
     /// Number of keys currently tracked (including not-yet-cleaned expired
     /// keys).
     pub fn len(&self) -> usize {

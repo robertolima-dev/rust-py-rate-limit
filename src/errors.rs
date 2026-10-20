@@ -24,6 +24,14 @@ pub enum RateLimitError {
     #[error("invalid `algorithm`: {0:?} (expected \"fixed\" or \"sliding\")")]
     InvalidAlgorithm(String),
 
+    /// `max_keys`, when given, must be a positive integer.
+    #[error("invalid `max_keys`: must be greater than 0")]
+    InvalidMaxKeys,
+
+    /// `cleanup_interval`, when given, must be a positive, finite number.
+    #[error("invalid `cleanup_interval`: must be a positive number of seconds")]
+    InvalidCleanupInterval,
+
     /// The system clock could not be read.
     #[error("system time error: {0}")]
     SystemTime(String),

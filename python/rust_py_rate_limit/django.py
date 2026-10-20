@@ -11,6 +11,8 @@ Add to ``settings.py``::
         "LIMIT": 100,
         "WINDOW_SECONDS": 60,
         "KEY": "ip",  # "ip" or "user"
+        "MAX_KEYS": 100_000,  # optional: bound memory under a key flood
+        "CLEANUP_INTERVAL": 60,  # optional: drop expired keys in the background
     }
 """
 
@@ -36,9 +38,16 @@ class RateLimitMiddleware:
         self.window_seconds = int(config.get("WINDOW_SECONDS", 60))
         self.key_type = str(config.get("KEY", "ip"))
         self.detail = str(config.get("DETAIL", "Too many requests"))
+        max_keys = config.get("MAX_KEYS")
+        cleanup_interval = config.get("CLEANUP_INTERVAL")
 
         self.limiter = RateLimiter(
-            limit=self.limit, window_seconds=self.window_seconds
+            limit=self.limit,
+            window_seconds=self.window_seconds,
+            max_keys=int(max_keys) if max_keys is not None else None,
+            cleanup_interval=(
+                float(cleanup_interval) if cleanup_interval is not None else None
+            ),
         )
 
     def _resolve_key(self, request) -> str:

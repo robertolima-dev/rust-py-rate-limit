@@ -10,6 +10,7 @@ mod fixed_window;
 mod rate_limiter;
 mod sliding_window;
 mod stats;
+mod sweeper;
 mod time_utils;
 
 // Reserved for a future algorithm (see the roadmap). Intentionally not wired in

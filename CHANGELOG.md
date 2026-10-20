@@ -5,6 +5,21 @@ Todas as mudanças relevantes deste projeto são registradas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 e o versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.3.1] — não publicada
+
+Só CI: nada muda no comportamento da biblioteca nem nas wheels publicadas.
+
+### Alterado
+
+- **Build macOS num job só.** O `release.yml` compilava `x86_64` e `aarch64`
+  numa matriz de dois jobs, e cada release precisava de duas máquinas macOS —
+  a fila mais disputada do GitHub Actions. Em 20/10/2026 dois releases
+  (`rust-py-monitor` 0.5.0 e `rust-py-audit` 0.4.1) ficaram parados com «The
+  job was not acquired by Runner of type hosted even after multiple attempts»
+  esperando a segunda máquina. Agora um único job em `macos-latest` (ARM)
+  compila os dois targets — o `x86_64` de forma cruzada, como já era feito —
+  e sobe um artefato `wheels-macos`. As wheels geradas são as mesmas.
+
 ## [0.3.0] — não publicada
 
 Memória com teto (**P2-3**). Até aqui o mapa de chaves crescia sem limite: a
